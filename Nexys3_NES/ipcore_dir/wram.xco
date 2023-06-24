@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.7
-# Date: Thu Apr 13 17:24:02 2023
+# Date: Sat Jun 24 21:23:27 2023
 #
 ##############################################################
 #
@@ -70,9 +70,9 @@ CSET pipeline_stages=0
 CSET port_a_clock=100
 CSET port_a_enable_rate=100
 CSET port_a_write_rate=50
-CSET port_b_clock=100
-CSET port_b_enable_rate=100
-CSET port_b_write_rate=50
+CSET port_b_clock=0
+CSET port_b_enable_rate=0
+CSET port_b_write_rate=0
 CSET primitive=8kx2
 CSET read_width_a=8
 CSET read_width_b=8
@@ -105,4 +105,4 @@ CSET write_width_b=8
 MISC pkg_timestamp=2012-11-19T16:22:25Z
 # END Extra information
 GENERATE
-# CRC: a4a39308
+# CRC: 284b593f

@@ -7,31 +7,33 @@
 // Module Name:    cart_02 
 // Project Name: FPGA_NES
 // Target Devices: EP4CE6E22C8N
-// Tool versions: 
+// Tool versions: ISE 14.7
 // Description: Mapper 02 for NES
 //
-// Dependencies: eeprom.sv, I2C_phy.sv, SDRAM_SP8_I.sv, CHR_RAM.v
+// Dependencies: Nexys3_memory_controller
 //
 // Revision: 
 // Revision 0.01 - File Created
+// Revision 0.02 - Adapted file for Nexys3
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
 module cart_02(
-		input  wire clk_sys,	// system clock signal
+		input wire clk_sys,				// system clock signal
 		input wire clk_mem,
 		input wire rst,
 		output wire rst_out,
 		// PRG-ROM interface:
-		input  wire        prg_nce_in,       // prg-rom chip enable (active low)
-		input  wire [14:0] prg_a_in,         // prg-rom address
-		input  wire        prg_r_nw_in,      // prg-rom read/write select
-		input  wire [ 7:0] prg_d_in,         // prg-rom data in
-		output wire [ 7:0] prg_d_out,        // prg-rom data out
-		input wire [7:0] chr_d_in,
-		output wire [7:0] chr_d_out,
-		input wire [13:0] chr_a_in,
-		input  wire        chr_r_nw_in,      // chr-rom read/write select
+		input wire prg_nce_in,			// prg-rom chip enable (active low)
+		input wire[14:0] prg_a_in,		// prg-rom address
+		input wire prg_r_nw_in,			// prg-rom read/write select
+		input wire[7:0] prg_d_in,		// prg-rom data in
+		output wire[7:0] prg_d_out,		// prg-rom data out
+		// CHR RAM interface
+		input wire[7:0] chr_d_in,
+		output wire[7:0] chr_d_out,
+		input wire[13:0] chr_a_in,
+		input wire chr_r_nw_in,			// chr-rom read/write select
 		output wire ciram_nce_out,
 		output wire ciram_a10_out,
 		//Flash and PSRAM interface

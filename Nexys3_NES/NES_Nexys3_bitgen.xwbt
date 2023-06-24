@@ -1,0 +1,8 @@
+INTSTYLE=ise
+INFILE=/home/ise/VM_share/Nexys3_NES/NES_Nexys3.ncd
+OUTFILE=/home/ise/VM_share/Nexys3_NES/NES_Nexys3.bit
+FAMILY=Spartan6
+PART=xc6slx16-3csg324
+WORKINGDIR=/home/ise/VM_share/Nexys3_NES
+LICENSE=ISE
+USER_INFO=8416_11442_1478797146_620

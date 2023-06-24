@@ -1,6 +1,7 @@
-module NES_DragonBoard(
+module NES_Nexys3(
 		input  wire clk,		// 50MHz system clock signal
 		input wire[3:0] button,
+		input wire[1:0] sw,
 		output wire[3:0] led,
 
 		input wire jp_data1,
@@ -16,7 +17,7 @@ module NES_DragonBoard(
 		output wire[1:0] VGA_GREEN,	// vga green signal
 		output wire [1:0] VGA_BLUE,	// vga blue signal
 
-		output wire       AUDIO,		// pwm output audio channel
+		output wire       audio_pwm,		// pwm output audio channel
 		//Flash and PSRAM interface
 		output wire[22:0] shared_a,
 		inout wire[15:0] shared_d,
@@ -41,6 +42,7 @@ module NES_DragonBoard(
 	
 	reg jp_data1_s;
 	reg jp_data2_s;
+	reg[1:0] sw_s;
 	
 	assign jp_latch1 = ~jp_latch;
 	assign jp_latch2 = ~jp_latch;
@@ -51,6 +53,7 @@ module NES_DragonBoard(
 	begin
 		 jp_data1_s <= jp_data1;
 		 jp_data2_s <= jp_data2;
+		 sw_s <= sw;
 	end
 
 	button_debounce debounce_inst(.clk(clk_25), .button_in(button), .rst(rst), .button_out(button_d));
@@ -77,12 +80,12 @@ module NES_DragonBoard(
 		 .d_out(from_cpu),
 		 .a_out(rp2a03_a),
 		 .r_nw_out(rp2a03_r_nw),
-		 .jp_data1_in(jp_data1_s),
-		 .jp_data2_in(jp_data2_s),
+		 .jp_data1_in(jp_data1_s | sw_s[0]),
+		 .jp_data2_in(jp_data2_s | sw_s[1]),
 		 .jp1_clk(jp_clk1),
 		 .jp2_clk(jp_clk2),
 		 .jp_latch(jp_latch),
-		 .audio_out(AUDIO),
+		 .audio_out(audio_pwm),
 		 .debug()
 	);
 //#############################################################################
@@ -133,7 +136,7 @@ module NES_DragonBoard(
 
 //#############################################################################
 //
-// CART: cartridge emulator
+// CART: NES cartridge
 //
 	wire        cart_prg_nce;
 	wire [ 7:0] cart_prg_dout;
@@ -169,7 +172,7 @@ module NES_DragonBoard(
 //	assign shared_a = 23'h000000;
 //	assign psram_clk = 1'b0;
 
-	cart_02 cart_inst(
+	cart_03_alt cart_inst(
 		.clk_sys(clk_25),	// system clock signal
 		.clk_mem(clk_50),
 		.rst(rst),
@@ -207,8 +210,8 @@ module NES_DragonBoard(
 //
 // VRAM: internal video ram
 //
-	wire [10:0] vram_a;
-	wire [7:0] vram_dout;
+	wire[10:0] vram_a;
+	wire[7:0] vram_dout;
 	assign vram_a = { cart_ciram_a10, ppu_vram_a[9:0] };
 
 	vram vram_inst(
@@ -224,8 +227,8 @@ module NES_DragonBoard(
 //
 // WRAM: internal work ram
 //
-	wire       wram_en;
-	wire [7:0] wram_dout;
+	wire wram_en;
+	wire[7:0] wram_dout;
 	assign wram_en = (rp2a03_a[15:13] == 0);
 
 	wram wram_inst(
