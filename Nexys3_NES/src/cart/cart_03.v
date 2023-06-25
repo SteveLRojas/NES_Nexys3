@@ -54,42 +54,37 @@ module cart_03(
 	reg reset_hold;
 	reg init_req;
 	reg [1:0] page;
-	reg[7:0] chrrom_dout;
-	reg[7:0] prgrom_dout;
+	reg[15:0] prgrom_dout;
+	reg addr_odd;
 	
-	//wire chrram_we;
-	wire[14:0] prg_mem_address;
-	wire[14:0] chr_mem_address;
-	wire[14:0] mem_address;
-	wire[7:0] mem_dout;
+	wire[13:0] prg_mem_address;	//word address
+	wire[19:0] window_mem_address;	//word address
+	wire[7:0] chrrom_dout;
+	wire[13:0] mem_address;	//word address
+	wire[15:0] mem_dout;
 	wire prg_addr_change;
-	wire chr_addr_change;
+	wire window_req;
 	wire mem_ready;
 	wire mem_req;
 	wire mem_busy;
 	wire req_type;
 	
-	reg[14:0] prev_prg_mem_address;
-	reg[14:0] prev_chr_mem_address;
+	reg[13:0] prev_prg_mem_address;
 	reg mem_active;
 	reg req_type_ff;
-	reg addr_odd;
 	
 	assign ciram_a10_out = chr_a_in[11];	//A10 for vertical mirroring, A11 for horizontal
 	assign ciram_nce_out = ~chr_a_in[13];
-	assign prg_d_out = prgrom_dout & {8{~prg_nce_in}};
+	assign prg_d_out = (addr_odd ? prgrom_dout[15:8] : prgrom_dout[7:0]) & {8{~prg_nce_in}};
 	assign chr_d_out = chrrom_dout & {8{ciram_nce_out}};
 	assign rst_out = reset_hold;
-	//assign chrram_we = ~chr_a_in[13] & ~chr_r_nw_in;
 	
-	assign prg_mem_address = prg_a_in;
-	assign chr_mem_address = {page, chr_a_in[12:0]};
+	assign prg_mem_address = prg_a_in[14:1];
 	assign prg_addr_change = prg_mem_address != prev_prg_mem_address;
-	assign chr_addr_change = chr_mem_address != prev_chr_mem_address;
-	assign mem_req = init_req | prg_addr_change | chr_addr_change;
+	assign mem_req = init_req | prg_addr_change | window_req;
 	assign mem_busy = mem_active & ~mem_ready;
-	assign req_type = chr_addr_change & ~(init_req | prg_addr_change);
-	assign mem_address = req_type ? chr_mem_address : prg_mem_address;
+	assign req_type = window_req & ~(init_req | prg_addr_change);
+	assign mem_address = req_type ? window_mem_address[13:0] : prg_mem_address;
 	
 	initial
 	begin
@@ -112,10 +107,8 @@ module cart_03(
 		begin
 			reset_hold <= 1'b1;
 			init_req <= 1'b1;
-			chrrom_dout <= 8'h00;
-			prgrom_dout <= 8'h00;
-			prev_prg_mem_address <= 15'h0000;
-			prev_chr_mem_address <= 15'h0000;
+			prgrom_dout <= 16'h0000;
+			prev_prg_mem_address <= 14'h0000;
 			mem_active <= 1'b0;
 			req_type_ff <= 1'b0;
 			addr_odd <= 1'b0;			
@@ -126,39 +119,45 @@ module cart_03(
 				reset_hold <= 1'b0;
 			init_req <= 1'b0;
 			mem_active <= mem_req | (mem_active & ~mem_ready);
+			addr_odd <= prg_a_in[0];
 
 			if(mem_req & ~mem_busy)
 			begin
-				if(req_type)
-					prev_chr_mem_address <= chr_mem_address;
-				else
+				if(~req_type)
 					prev_prg_mem_address <= prg_mem_address;
 				req_type_ff <= req_type;
-				addr_odd <= mem_address[0];
 			end
 
-			if(mem_ready)
+			if(mem_ready & ~req_type_ff)
 			begin
-				if(req_type_ff)
-					chrrom_dout <= mem_dout;
-				else
-					prgrom_dout <= mem_dout;
+				prgrom_dout <= mem_dout;
 			end
 		end
 	end
-
-	//ROM_PRG_03 PRG_03_inst(.clka(clk_in), .addra(prg_a_in), .douta(prgrom_dout));
-	//ROM_CHR_03 CHR_03_inst(.clka(clk_in), .addra({page, chr_a_in[12:0]}), .douta(chrrom_dout));
 	
-	wire[15:0] from_flash;
-	assign mem_dout = addr_odd ? from_flash[15:8] : from_flash[7:0];
+	chr_rom_window chr_rom_window_i(
+		.clk(clk_mem),
+		.rst(rst),
+		//CHR ROM interface
+		.page({6'h00, page}),
+		.init_req(init_req),
+		.chr_addr(chr_a_in[12:0]),
+		.chr_data(chrrom_dout),
+		//Memory interface
+		.ready(mem_ready & req_type_ff),
+		.req_ack(mem_req & ~mem_busy & req_type),
+		.from_mem(mem_dout),
+		.mem_addr(window_mem_address),
+		.req(window_req)
+	);
+	
 	Nexys3_memory_controller memory_controller_inst(
 		.clk(clk_mem),
 		.rst(rst),
 		//Port 1 (Flash)
-		.p1_address({8'h00, req_type, mem_address[14:1]}),
+		.p1_address({8'h00, req_type, mem_address}),
 		.p1_to_mem(16'h0000),
-		.p1_from_mem(from_flash),
+		.p1_from_mem(mem_dout),
 		.p1_req(mem_req & ~mem_busy),
 		.p1_wren(1'b0),
 		.p1_ready(mem_ready),

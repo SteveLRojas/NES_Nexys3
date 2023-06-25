@@ -172,7 +172,7 @@ module NES_Nexys3(
 //	assign shared_a = 23'h000000;
 //	assign psram_clk = 1'b0;
 
-	cart_03_alt cart_inst(
+	cart_03 cart_inst(
 		.clk_sys(clk_25),	// system clock signal
 		.clk_mem(clk_50),
 		.rst(rst),
